@@ -10,9 +10,6 @@ class BudgetScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Budget'),
-      ),
       body: Consumer<AppProvider>(
         builder: (context, provider, child) {
           final now = DateTime.now();
@@ -27,38 +24,117 @@ class BudgetScreen extends StatelessWidget {
           final allocated = currentBudgets.fold(0.0, (sum, b) => sum + b.amount);
           final remaining = totalIncome - fixedExpenses - allocated;
 
-          return ListView(
-            padding: const EdgeInsets.all(16),
+          return Column(
             children: [
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      _buildRow('Total Income', currencyFormat.format(totalIncome)),
-                      _buildRow('Fixed Expenses', currencyFormat.format(fixedExpenses), color: Colors.red),
-                      _buildRow('Allocated', currencyFormat.format(allocated), color: Colors.orange),
-                      const Divider(),
-                      _buildRow('Remaining to Budget', currencyFormat.format(remaining), color: remaining >= 0 ? Colors.green : Colors.red, bold: true),
-                    ],
+              // Gradient Header
+              Container(
+                padding: const EdgeInsets.only(top: 60, left: 24, right: 24, bottom: 24),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFF00C4B4), Color(0xFF008F84)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(30),
+                    bottomRight: Radius.circular(30),
                   ),
                 ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'My Budget',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.pie_chart, color: Colors.white),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 16),
-              const Text('Categories', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              ...currentBudgets.map((budget) => ListTile(
-                title: Text(budget.category),
-                trailing: Text(currencyFormat.format(budget.amount)),
-                onTap: () => _showAddBudgetDialog(context, budget: budget),
-              )),
+
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.all(20),
+                  children: [
+                    // Summary Card
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.08),
+                            blurRadius: 15,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          _buildRow('Total Income', currencyFormat.format(totalIncome)),
+                          const Divider(height: 24),
+                          _buildRow('Fixed Expenses', currencyFormat.format(fixedExpenses), color: const Color(0xFFFF6B6B)),
+                          _buildRow('Allocated', currencyFormat.format(allocated), color: Colors.orange),
+                          const Divider(height: 24),
+                          _buildRow('Remaining to Budget', currencyFormat.format(remaining), color: remaining >= 0 ? const Color(0xFF00C4B4) : const Color(0xFFFF6B6B), bold: true),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 30),
+                    const Text('Budget Categories', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1A1A1A))),
+                    const SizedBox(height: 16),
+                    
+                    ...currentBudgets.map((budget) => Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                        title: Text(budget.category, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1A1A1A))),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(currencyFormat.format(budget.amount), 
+                                style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF00C4B4), fontSize: 16)),
+                            const SizedBox(width: 8),
+                            const Icon(Icons.chevron_right, color: Colors.grey),
+                          ],
+                        ),
+                        onTap: () => _showAddBudgetDialog(context, budget: budget),
+                      ),
+                    )),
+                  ],
+                ),
+              ),
             ],
           );
         },
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddBudgetDialog(context),
-        child: const Icon(Icons.add),
+        backgroundColor: const Color(0xFF00C4B4),
+        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
@@ -69,11 +145,11 @@ class BudgetScreen extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label),
+          Text(label, style: const TextStyle(color: Color(0xFF1A1A1A))),
           Text(
             value,
             style: TextStyle(
-              color: color,
+              color: color ?? const Color(0xFF1A1A1A),
               fontWeight: bold ? FontWeight.bold : null,
             ),
           ),
