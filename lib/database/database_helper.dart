@@ -23,9 +23,16 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 2, // Increment version
       onCreate: _createDB,
+      onUpgrade: _onUpgrade, // Handle migration
     );
+  }
+
+  Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('ALTER TABLE transactions ADD COLUMN subCategory TEXT');
+    }
   }
 
   Future _createDB(Database db, int version) async {
@@ -40,6 +47,7 @@ class DatabaseHelper {
         timestamp $textType,
         amount $realType,
         category $textType,
+        subCategory TEXT,
         type $textType,
         note TEXT
       )
@@ -103,6 +111,16 @@ class DatabaseHelper {
   Future<int> createBudget(Budget budget) async {
     final db = await database;
     return await db.insert('budgets', budget.toMap());
+  }
+
+  Future<int> updateBudget(Budget budget) async {
+    final db = await database;
+    return await db.update(
+      'budgets',
+      budget.toMap(),
+      where: 'id = ?',
+      whereArgs: [budget.id],
+    );
   }
 
   Future<List<Budget>> readAllBudgets() async {

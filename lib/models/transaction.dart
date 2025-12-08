@@ -3,6 +3,7 @@ class Transaction {
   final DateTime timestamp;
   final double amount;
   final String category;
+  final String subCategory; // New field for sub-category
   final String type; // 'income' or 'expense'
   final String note;
 
@@ -11,6 +12,7 @@ class Transaction {
     required this.timestamp,
     required this.amount,
     required this.category,
+    this.subCategory = '', // Default to empty string
     required this.type,
     this.note = '',
   });
@@ -21,6 +23,7 @@ class Transaction {
       'timestamp': timestamp.toIso8601String(),
       'amount': amount,
       'category': category,
+      'subCategory': subCategory,
       'type': type,
       'note': note,
     };
@@ -32,6 +35,7 @@ class Transaction {
       timestamp: DateTime.parse(map['timestamp']),
       amount: map['amount'],
       category: map['category'],
+      subCategory: map['subCategory'] ?? '',
       type: map['type'],
       note: map['note'] ?? '',
     );

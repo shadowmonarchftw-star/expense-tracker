@@ -50,6 +50,11 @@ class AppProvider with ChangeNotifier {
     await loadData();
   }
 
+  Future<void> updateBudget(Budget budget) async {
+    await _db.updateBudget(budget);
+    await loadData();
+  }
+
   Future<void> addFixedExpense(FixedExpense expense) async {
     await _db.createFixedExpense(expense);
     await loadData();
@@ -63,5 +68,12 @@ class AppProvider with ChangeNotifier {
   Future<void> updateSettings(UserSettings settings) async {
     await _db.createOrUpdateSettings(settings);
     await loadData();
+  }
+
+  double getSpentAmountForCategory(String category) {
+    // Filter transactions by category and sum amounts (only expenses)
+    return _transactions
+        .where((t) => t.category == category && t.type == 'expense')
+        .fold(0.0, (sum, t) => sum + t.amount);
   }
 }

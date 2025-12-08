@@ -50,6 +50,7 @@ class BudgetScreen extends StatelessWidget {
               ...currentBudgets.map((budget) => ListTile(
                 title: Text(budget.category),
                 trailing: Text(currencyFormat.format(budget.amount)),
+                onTap: () => _showAddBudgetDialog(context, budget: budget),
               )),
             ],
           );
@@ -81,26 +82,30 @@ class BudgetScreen extends StatelessWidget {
     );
   }
 
-  void _showAddBudgetDialog(BuildContext context) {
+  void _showAddBudgetDialog(BuildContext context, {Budget? budget}) {
     final provider = Provider.of<AppProvider>(context, listen: false);
-    String category = '';
-    String amountText = '';
+    String category = budget?.category ?? '';
+    String amountText = budget?.amount.toStringAsFixed(0) ?? '';
     final now = DateTime.now();
+    final isEditing = budget != null;
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Add Budget'),
+        title: Text(isEditing ? 'Edit Budget' : 'Add Budget'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               decoration: const InputDecoration(labelText: 'Category'),
+              controller: TextEditingController(text: category),
               onChanged: (value) => category = value,
+              enabled: !isEditing, // Lock category when editing to prevent duplicates logic issues
             ),
             const SizedBox(height: 16),
             TextField(
               decoration: const InputDecoration(labelText: 'Amount'),
+              controller: TextEditingController(text: amountText),
               keyboardType: TextInputType.number,
               onChanged: (value) => amountText = value,
             ),
@@ -115,12 +120,22 @@ class BudgetScreen extends StatelessWidget {
             onPressed: () {
               final amount = int.tryParse(amountText);
               if (amount != null && amount > 0 && category.isNotEmpty) {
-                provider.addBudget(Budget(
-                  category: category,
-                  amount: amount.toDouble(),
-                  month: now.month,
-                  year: now.year,
-                ));
+                if (isEditing) {
+                  provider.updateBudget(Budget(
+                    id: budget.id,
+                    category: category,
+                    amount: amount.toDouble(),
+                    month: budget.month,
+                    year: budget.year,
+                  ));
+                } else {
+                  provider.addBudget(Budget(
+                    category: category,
+                    amount: amount.toDouble(),
+                    month: now.month,
+                    year: now.year,
+                  ));
+                }
                 Navigator.pop(context);
               }
             },
