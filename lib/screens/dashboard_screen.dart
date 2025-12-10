@@ -4,12 +4,15 @@ import '../providers/app_provider.dart';
 import 'package:intl/intl.dart';
 import '../services/auth_service.dart';
 
+import '../widgets/app_drawer.dart'; // Import drawer
+
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: const AppDrawer(),
       body: Consumer<AppProvider>(
         builder: (context, provider, child) {
           final now = DateTime.now();
@@ -28,13 +31,12 @@ class DashboardScreen extends StatelessWidget {
           final totalExpense = fixedExpenses + variableExpenses;
           
           final balance = totalIncome - totalExpense;
-          final currencyFormat = NumberFormat.currency(symbol: provider.settings.currencyCode);
-
+          final currencyFormat = NumberFormat.currency(symbol: provider.settings.currency);
           return Column(
             children: [
               // Gradient Header with Greeting
               Container(
-                padding: const EdgeInsets.only(top: 60, left: 24, right: 24, bottom: 30),
+                padding: const EdgeInsets.only(top: 60, left: 16, right: 24, bottom: 30), // Adjusted padding
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
                     colors: [Color(0xFF00C4B4), Color(0xFF008F84)],
@@ -50,8 +52,12 @@ class DashboardScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
+                        IconButton(
+                          icon: const Icon(Icons.menu, color: Colors.white),
+                          onPressed: () => Scaffold.of(context).openDrawer(),
+                        ),
+                        const SizedBox(width: 8),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [

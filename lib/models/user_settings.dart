@@ -1,27 +1,31 @@
 class UserSettings {
   final String? id;
   final double salary;
-  final String currencyCode;
+  final String currency;
+  final bool isDarkMode;
 
   UserSettings({
     this.id,
     required this.salary,
-    this.currencyCode = 'NPR',
+    this.currency = '\$',
+    this.isDarkMode = false,
   });
 
   Map<String, dynamic> toMap() {
     return {
       'id': id,
       'salary': salary,
-      'currencyCode': currencyCode,
+      'currency': currency,
+      'isDarkMode': isDarkMode ? 1 : 0,
     };
   }
 
   factory UserSettings.fromMap(Map<String, dynamic> map) {
     return UserSettings(
-      id: map['id']?.toString(),
+      id: map['id']?.toString(), // Handle parsing
       salary: map['salary'],
-      currencyCode: map['currencyCode'] ?? 'NPR',
+      currency: map['currency'] ?? '\$',
+      isDarkMode: (map['isDarkMode'] == 1 || map['isDarkMode'] == true),
     );
   }
 }

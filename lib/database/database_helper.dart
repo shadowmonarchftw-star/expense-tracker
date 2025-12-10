@@ -8,23 +8,25 @@ import '../models/user_settings.dart';
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
   static Database? _database;
+  static const _databaseVersion = 3; // New: Database version constant
+  static const _databaseName = 'expense_tracker.db'; // New: Database name constant
 
   DatabaseHelper._init();
 
   Future<Database> get database async {
     if (_database != null) return _database!;
-    _database = await _initDB('expense_tracker.db');
+    _database = await _initDatabase(); // Changed to _initDatabase
     return _database!;
   }
 
-  Future<Database> _initDB(String filePath) async {
+  Future<Database> _initDatabase() async { // Renamed from _initDB
     final dbPath = await getDatabasesPath();
-    final path = join(dbPath, filePath);
+    final path = join(dbPath, _databaseName); // Using _databaseName
 
     return await openDatabase(
       path,
-      version: 2, // Increment version
-      onCreate: _createDB,
+      version: _databaseVersion, // Using _databaseVersion
+      onCreate: _onCreate, // Renamed from _createDB
       onUpgrade: _onUpgrade, // Handle migration
     );
   }
@@ -33,9 +35,21 @@ class DatabaseHelper {
     if (oldVersion < 2) {
       await db.execute('ALTER TABLE transactions ADD COLUMN subCategory TEXT');
     }
+    
+    // New: Handle upgrade to version 3
+    if (oldVersion < 3) {
+      // Version 3: Add isDarkMode to settings table
+      // Check if column exists first to be safe, or just try add
+      try {
+        await db.execute('ALTER TABLE settings ADD COLUMN isDarkMode INTEGER DEFAULT 0');
+      } catch (e) {
+        // Column might already exist if dev did something weird, ignore
+        print("Column isDarkMode might already exist: $e");
+      }
+    }
   }
 
-  Future _createDB(Database db, int version) async {
+  Future _onCreate(Database db, int version) async { // Renamed from _createDB
     const idType = 'INTEGER PRIMARY KEY AUTOINCREMENT';
     const textType = 'TEXT NOT NULL';
     const realType = 'REAL NOT NULL';
@@ -75,7 +89,8 @@ class DatabaseHelper {
       CREATE TABLE settings (
         id $idType,
         salary $realType,
-        currencyCode $textType
+        currencyCode $textType,
+        isDarkMode INTEGER DEFAULT 0 -- New: Added isDarkMode column
       )
     ''');
   }

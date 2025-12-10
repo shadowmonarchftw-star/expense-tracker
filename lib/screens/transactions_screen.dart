@@ -4,22 +4,24 @@ import '../providers/app_provider.dart';
 import '../models/transaction.dart';
 import 'package:intl/intl.dart';
 
+import '../widgets/app_drawer.dart';
+
 class TransactionsScreen extends StatelessWidget {
   const TransactionsScreen({super.key});
 
   @override
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: const AppDrawer(),
       body: Consumer<AppProvider>(
         builder: (context, provider, child) {
-          final currencyFormat = NumberFormat.currency(symbol: provider.settings.currencyCode);
+          final currencyFormat = NumberFormat.currency(symbol: provider.settings.currency);
           
           return Column(
             children: [
               // Custom Gradient Header
               Container(
-                padding: const EdgeInsets.only(top: 50, left: 20, right: 20, bottom: 20),
+                padding: const EdgeInsets.only(top: 50, left: 16, right: 20, bottom: 20), // Adjusted padding
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
                     colors: [Color(0xFF00C4B4), Color(0xFF008F84)],
@@ -32,14 +34,20 @@ class TransactionsScreen extends StatelessWidget {
                   ),
                 ),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Transactions',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
+                    IconButton(
+                      icon: const Icon(Icons.menu, color: Colors.white),
+                      onPressed: () => Scaffold.of(context).openDrawer(),
+                    ),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'Transactions',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                     Container(

@@ -30,6 +30,30 @@ class AppProvider with ChangeNotifier {
   UserSettings get settings => _settings ?? UserSettings(salary: 0);
 
   bool get isSynced => _firestoreService != null;
+  
+  int _selectedIndex = 0;
+  int get selectedIndex => _selectedIndex;
+  
+  void setTabIndex(int index) {
+    _selectedIndex = index;
+    notifyListeners();
+  }
+  
+  ThemeMode get themeMode {
+    if (_settings == null) return ThemeMode.system;
+    return _settings!.isDarkMode ? ThemeMode.dark : ThemeMode.light;
+  }
+  
+  Future<void> toggleTheme(bool isDark) async {
+    final currentSettings = settings;
+    final newSettings = UserSettings(
+      id: currentSettings.id,
+      salary: currentSettings.salary,
+      currency: currentSettings.currency,
+      isDarkMode: isDark,
+    );
+    await updateSettings(newSettings);
+  }
 
   AppProvider() {
     _init();

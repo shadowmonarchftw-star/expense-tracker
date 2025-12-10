@@ -4,12 +4,15 @@ import '../providers/app_provider.dart';
 import '../models/budget.dart';
 import 'package:intl/intl.dart';
 
+import '../widgets/app_drawer.dart';
+
 class BudgetScreen extends StatelessWidget {
   const BudgetScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: const AppDrawer(),
       body: Consumer<AppProvider>(
         builder: (context, provider, child) {
           final now = DateTime.now();
@@ -17,18 +20,17 @@ class BudgetScreen extends StatelessWidget {
           final currentYear = now.year;
           
           final currentBudgets = provider.budgets.where((b) => b.month == currentMonth && b.year == currentYear).toList();
-          final currencyFormat = NumberFormat.currency(symbol: provider.settings.currencyCode);
+          final currencyFormat = NumberFormat.currency(symbol: provider.settings.currency);
           
           final totalIncome = provider.settings.salary;
           final fixedExpenses = provider.fixedExpenses.fold(0.0, (sum, e) => sum + e.amount);
           final allocated = currentBudgets.fold(0.0, (sum, b) => sum + b.amount);
           final remaining = totalIncome - fixedExpenses - allocated;
-
           return Column(
             children: [
               // Gradient Header
               Container(
-                padding: const EdgeInsets.only(top: 60, left: 24, right: 24, bottom: 24),
+                padding: const EdgeInsets.only(top: 60, left: 16, right: 24, bottom: 24), // Adjusted padding
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
                     colors: [Color(0xFF00C4B4), Color(0xFF008F84)],
@@ -41,14 +43,20 @@ class BudgetScreen extends StatelessWidget {
                   ),
                 ),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'My Budget',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
+                    IconButton(
+                      icon: const Icon(Icons.menu, color: Colors.white),
+                      onPressed: () => Scaffold.of(context).openDrawer(),
+                    ),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'My Budget',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                     Container(

@@ -6,17 +6,20 @@ import '../models/fixed_expense.dart';
 import 'package:intl/intl.dart';
 import '../services/auth_service.dart';
 
+import '../widgets/app_drawer.dart';
+
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: const AppDrawer(),
       body: Column(
         children: [
           // Gradient Header
           Container(
-            padding: const EdgeInsets.only(top: 60, left: 24, right: 24, bottom: 24),
+            padding: const EdgeInsets.only(top: 60, left: 16, right: 24, bottom: 24), // Adjusted padding
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 colors: [Color(0xFF00C4B4), Color(0xFF008F84)],
@@ -29,14 +32,20 @@ class SettingsScreen extends StatelessWidget {
               ),
             ),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Settings',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
+                IconButton(
+                  icon: const Icon(Icons.menu, color: Colors.white),
+                  onPressed: () => Scaffold.of(context).openDrawer(),
+                ),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text(
+                    'Settings',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
                 Container(
@@ -54,7 +63,7 @@ class SettingsScreen extends StatelessWidget {
           Expanded(
             child: Consumer<AppProvider>(
               builder: (context, provider, child) {
-                final currencyFormat = NumberFormat.currency(symbol: provider.settings.currencyCode);
+                final currencyFormat = NumberFormat.currency(symbol: provider.settings.currency);
                 
                 return ListView(
                   padding: const EdgeInsets.all(20),
@@ -133,7 +142,7 @@ class SettingsScreen extends StatelessWidget {
                     _buildSettingsCard(
                       icon: Icons.currency_exchange,
                       title: 'Currency',
-                      subtitle: provider.settings.currencyCode,
+                      subtitle: provider.settings.currency,
                       onTap: () => _showCurrencyDialog(context, provider),
                     ),
                     
@@ -259,7 +268,9 @@ class SettingsScreen extends StatelessWidget {
               if (salary != null && salary > 0) {
                 provider.updateSettings(UserSettings(
                   salary: salary.toDouble(),
-                  currencyCode: provider.settings.currencyCode,
+                  currency: provider.settings.currency,
+                  isDarkMode: provider.settings.isDarkMode,
+                  id: provider.settings.id
                 ));
                 Navigator.pop(context);
               }
@@ -284,7 +295,9 @@ class SettingsScreen extends StatelessWidget {
             onTap: () {
               provider.updateSettings(UserSettings(
                 salary: provider.settings.salary,
-                currencyCode: currency,
+                currency: currency,
+                isDarkMode: provider.settings.isDarkMode,
+                id: provider.settings.id
               ));
               Navigator.pop(context);
             },
