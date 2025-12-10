@@ -1,5 +1,5 @@
 class FixedExpense {
-  final int? id;
+  final String? id;
   final String name;
   final double amount;
 
@@ -19,7 +19,7 @@ class FixedExpense {
 
   factory FixedExpense.fromMap(Map<String, dynamic> map) {
     return FixedExpense(
-      id: map['id'],
+      id: map['id']?.toString(),
       name: map['name'],
       amount: map['amount'],
     );

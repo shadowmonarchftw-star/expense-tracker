@@ -4,15 +4,31 @@ import 'screens/dashboard_screen.dart';
 import 'screens/transactions_screen.dart';
 import 'screens/budget_screen.dart';
 import 'screens/settings_screen.dart';
+import 'screens/login_screen.dart';
 import 'providers/app_provider.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'services/auth_service.dart';
 
-void main() {
-  runApp(
-    ChangeNotifierProvider(
-      create: (_) => AppProvider(),
-      child: const MyApp(),
-    ),
-  );
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await Firebase.initializeApp();
+    runApp(
+      ChangeNotifierProvider(
+        create: (_) => AppProvider(),
+        child: const MyApp(),
+      ),
+    );
+  } catch (e) {
+    runApp(MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: Text("Error initializing app: $e", textAlign: TextAlign.center),
+        ),
+      ),
+    ));
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -25,9 +41,25 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
+        scaffoldBackgroundColor: const Color(0xFFF5F7FA),
       ),
-      darkTheme: ThemeData.dark(useMaterial3: true),
-      home: const MainScreen(),
+      themeMode: ThemeMode.light,
+      home: StreamBuilder<User?>(
+        stream: AuthService().user,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
+          
+          if (snapshot.hasData) {
+            return const MainScreen();
+          }
+          
+          return const LoginScreen();
+        },
+      ),
     );
   }
 }

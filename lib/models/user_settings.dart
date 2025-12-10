@@ -1,5 +1,5 @@
 class UserSettings {
-  final int? id;
+  final String? id;
   final double salary;
   final String currencyCode;
 
@@ -19,7 +19,7 @@ class UserSettings {
 
   factory UserSettings.fromMap(Map<String, dynamic> map) {
     return UserSettings(
-      id: map['id'],
+      id: map['id']?.toString(),
       salary: map['salary'],
       currencyCode: map['currencyCode'] ?? 'NPR',
     );

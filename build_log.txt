@@ -1,0 +1,97 @@
+Running Gradle task 'assembleRelease'...                        
+lib/screens/settings_screen.dart:61:29: Error: Can't find ']' to match '['.
+                  children: [
+                            ^
+lib/screens/settings_screen.dart:56:51: Error: Can't find '}' to match '{'.
+              builder: (context, provider, child) {
+                                                  ^
+lib/screens/settings_screen.dart:54:19: Error: Can't find ')' to match '('.
+          Expanded(
+                  ^
+lib/screens/settings_screen.dart:14:20: Error: Can't find ')' to match '('.
+    return Scaffold(
+                   ^
+lib/screens/settings_screen.dart:139:16: Error: Expected a class member, but got ','.
+              },
+               ^
+lib/screens/settings_screen.dart:140:13: Error: Expected a class member, but got ')'.
+            ),
+            ^
+lib/screens/settings_screen.dart:140:14: Error: Expected a class member, but got ','.
+            ),
+             ^
+lib/screens/settings_screen.dart:141:11: Error: Expected a class member, but got ')'.
+          ),
+          ^
+lib/screens/settings_screen.dart:141:12: Error: Expected a class member, but got ','.
+          ),
+           ^
+lib/screens/settings_screen.dart:142:9: Error: Expected a class member, but got ']'.
+        ],
+        ^
+lib/screens/settings_screen.dart:142:10: Error: Expected a class member, but got ','.
+        ],
+         ^
+lib/screens/settings_screen.dart:143:7: Error: Expected a class member, but got ')'.
+      ),
+      ^
+lib/screens/settings_screen.dart:143:8: Error: Expected a class member, but got ','.
+      ),
+       ^
+lib/screens/settings_screen.dart:144:5: Error: Expected a class member, but got ')'.
+    );
+    ^
+lib/screens/settings_screen.dart:144:6: Error: Expected a class member, but got ';'.
+    );
+     ^
+lib/screens/settings_screen.dart:273:1: Error: Expected a declaration, but got '}'.
+}
+^
+lib/screens/settings_screen.dart:122:23: Error: Expected ';' after this.
+                      ),
+                      ^
+lib/screens/settings_screen.dart:122:24: Error: Expected an identifier, but got ','.
+Try inserting an identifier before ','.
+                      ),
+                       ^
+lib/screens/settings_screen.dart:122:24: Error: Unexpected token ';'.
+                      ),
+                       ^
+lib/screens/settings_screen.dart:54:19: Error: Too many positional arguments: 0 allowed, but 4 found.
+Try removing the extra positional arguments.
+          Expanded(
+                  ^
+../../flutter/packages/flutter/lib/src/widgets/basic.dart:6065:9: Context: Found this candidate, but the arguments don't match.
+  const Expanded({super.key, super.flex, required super.child}) : super(fit: FlexFit.tight);
+        ^^^^^^^^
+lib/services/auth_service.dart:7:38: Error: Couldn't find constructor 'GoogleSignIn'.
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
+                                     ^^^^^^^^^^^^
+lib/services/auth_service.dart:19:67: Error: The method 'signIn' isn't defined for the type 'GoogleSignIn'.
+ - 'GoogleSignIn' is from 'package:google_sign_in/google_sign_in.dart' ('../../.pub-cache/hosted/pub.dev/google_sign_in-7.2.0/lib/google_sign_in.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'signIn'.
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+                                                                  ^^^^^^
+lib/services/auth_service.dart:31:33: Error: The getter 'accessToken' isn't defined for the type 'GoogleSignInAuthentication'.
+ - 'GoogleSignInAuthentication' is from 'package:google_sign_in/src/token_types.dart' ('../../.pub-cache/hosted/pub.dev/google_sign_in-7.2.0/lib/src/token_types.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'accessToken'.
+        accessToken: googleAuth.accessToken,
+                                ^^^^^^^^^^^
+Target kernel_snapshot_program failed: Exception
+
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:compileFlutterBuildRelease'.
+> Process 'command '/Users/success/flutter/bin/flutter'' finished with non-zero exit value 1
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 32s
+Running Gradle task 'assembleRelease'...                           32.5s
+Gradle task assembleRelease failed with exit code 1

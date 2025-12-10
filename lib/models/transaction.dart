@@ -1,5 +1,5 @@
 class Transaction {
-  final int? id;
+  final String? id;
   final DateTime timestamp;
   final double amount;
   final String category;
@@ -31,7 +31,7 @@ class Transaction {
 
   factory Transaction.fromMap(Map<String, dynamic> map) {
     return Transaction(
-      id: map['id'],
+      id: map['id']?.toString(),
       timestamp: DateTime.parse(map['timestamp']),
       amount: map['amount'],
       category: map['category'],

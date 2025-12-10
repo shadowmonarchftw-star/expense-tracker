@@ -83,7 +83,26 @@ class DatabaseHelper {
   // Transaction CRUD
   Future<int> createTransaction(models.Transaction transaction) async {
     final db = await database;
-    return await db.insert('transactions', transaction.toMap());
+    // Remove ID from map if it's null or we want auto-increment
+    // Since we are creating in SQLite, we let SQLite generate the ID.
+    // The model might have a null ID.
+    final map = transaction.toMap();
+    if (map['id'] == null) {
+      map.remove('id');
+    } else {
+      // If ID is present (e.g. string "1"), parse it to Int if possible, else remove it (if it's a UUID)
+      // Since this is SQLite, we can only store Int IDs in the ID column.
+      // If we are syncing FROM cloud to local, and cloud has "abc", we can't store it in ID.
+      // We made a decision: Local SQLite is purely for local-created data or offline cache for "legacy" data. 
+      // Cloud data will NOT be saved to SQLite ID column if the ID is non-numeric.
+      // For now, let's assume we are just fixing compilation for existing logic.
+      try {
+        map['id'] = int.parse(map['id']);
+      } catch (e) {
+        map.remove('id'); // Cannot save non-numeric ID to this column
+      }
+    }
+    return await db.insert('transactions', map);
   }
 
   Future<List<models.Transaction>> readAllTransactions() async {
@@ -94,33 +113,58 @@ class DatabaseHelper {
 
   Future<int> updateTransaction(models.Transaction transaction) async {
     final db = await database;
-    return db.update(
-      'transactions',
-      transaction.toMap(),
-      where: 'id = ?',
-      whereArgs: [transaction.id],
-    );
+    if (transaction.id == null) return 0;
+    try {
+      final intId = int.parse(transaction.id!);
+      final map = transaction.toMap();
+      map['id'] = intId; // Ensure it's passed as int
+      return db.update(
+        'transactions',
+        map,
+        where: 'id = ?',
+        whereArgs: [intId],
+      );
+    } catch (e) {
+      return 0; // Cannot update item with non-numeric ID in SQLite
+    }
   }
 
-  Future<int> deleteTransaction(int id) async {
+  Future<int> deleteTransaction(String id) async {
     final db = await database;
-    return await db.delete('transactions', where: 'id = ?', whereArgs: [id]);
+    try {
+      final intId = int.parse(id);
+      return await db.delete('transactions', where: 'id = ?', whereArgs: [intId]);
+    } catch (e) {
+      return 0;
+    }
   }
 
   // Budget CRUD
   Future<int> createBudget(Budget budget) async {
     final db = await database;
-    return await db.insert('budgets', budget.toMap());
+    final map = budget.toMap();
+    if (map['id'] == null) {
+      map.remove('id');
+    } else {
+       try { map['id'] = int.parse(map['id']); } catch(e) { map.remove('id'); }
+    }
+    return await db.insert('budgets', map);
   }
 
   Future<int> updateBudget(Budget budget) async {
     final db = await database;
-    return await db.update(
-      'budgets',
-      budget.toMap(),
-      where: 'id = ?',
-      whereArgs: [budget.id],
-    );
+    if (budget.id == null) return 0;
+    try {
+       final intId = int.parse(budget.id!);
+       final map = budget.toMap();
+       map['id'] = intId;
+       return await db.update(
+        'budgets',
+        map,
+        where: 'id = ?',
+        whereArgs: [intId],
+      );
+    } catch (e) { return 0; }
   }
 
   Future<List<Budget>> readAllBudgets() async {
@@ -129,15 +173,24 @@ class DatabaseHelper {
     return result.map((json) => Budget.fromMap(json)).toList();
   }
 
-  Future<int> deleteBudget(int id) async {
+  Future<int> deleteBudget(String id) async {
     final db = await database;
-    return await db.delete('budgets', where: 'id = ?', whereArgs: [id]);
+    try {
+      final intId = int.parse(id);
+      return await db.delete('budgets', where: 'id = ?', whereArgs: [intId]);
+    } catch (e) { return 0; }
   }
 
   // Fixed Expense CRUD
   Future<int> createFixedExpense(FixedExpense expense) async {
     final db = await database;
-    return await db.insert('fixed_expenses', expense.toMap());
+     final map = expense.toMap();
+    if (map['id'] == null) {
+      map.remove('id');
+    } else {
+       try { map['id'] = int.parse(map['id']); } catch(e) { map.remove('id'); }
+    }
+    return await db.insert('fixed_expenses', map);
   }
 
   Future<List<FixedExpense>> readAllFixedExpenses() async {
@@ -146,19 +199,26 @@ class DatabaseHelper {
     return result.map((json) => FixedExpense.fromMap(json)).toList();
   }
 
-  Future<int> deleteFixedExpense(int id) async {
+  Future<int> deleteFixedExpense(String id) async {
     final db = await database;
-    return await db.delete('fixed_expenses', where: 'id = ?', whereArgs: [id]);
+    try {
+      final intId = int.parse(id);
+      return await db.delete('fixed_expenses', where: 'id = ?', whereArgs: [intId]);
+    } catch (e) { return 0; }
   }
 
   // Settings
   Future<int> createOrUpdateSettings(UserSettings settings) async {
     final db = await database;
     final existing = await db.query('settings');
+    final map = settings.toMap();
+    // Settings usually doesn't strictly need ID manipulation if we query by existence, but for safety:
+    map.remove('id'); // Settings ID is auto-managed
+    
     if (existing.isEmpty) {
-      return await db.insert('settings', settings.toMap());
+      return await db.insert('settings', map);
     } else {
-      return await db.update('settings', settings.toMap(), where: 'id = ?', whereArgs: [existing.first['id']]);
+      return await db.update('settings', map, where: 'id = ?', whereArgs: [existing.first['id']]);
     }
   }
 

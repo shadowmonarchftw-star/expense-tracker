@@ -1,5 +1,5 @@
 class Budget {
-  final int? id;
+  final String? id;
   final String category;
   final double amount;
   final int month;
@@ -25,7 +25,7 @@ class Budget {
 
   factory Budget.fromMap(Map<String, dynamic> map) {
     return Budget(
-      id: map['id'],
+      id: map['id']?.toString(),
       category: map['category'],
       amount: map['amount'],
       month: map['month'],

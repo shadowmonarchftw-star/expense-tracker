@@ -4,6 +4,7 @@ import '../providers/app_provider.dart';
 import '../models/user_settings.dart';
 import '../models/fixed_expense.dart';
 import 'package:intl/intl.dart';
+import '../services/auth_service.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -58,6 +59,69 @@ class SettingsScreen extends StatelessWidget {
                 return ListView(
                   padding: const EdgeInsets.all(20),
                   children: [
+
+                    if (AuthService().currentUser != null) ...[
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 24),
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 15,
+                              offset: const Offset(0, 5),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 60,
+                              height: 60,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: const Color(0xFFE0F7FA),
+                                image: AuthService().currentUser?.photoURL != null
+                                    ? DecorationImage(
+                                        image: NetworkImage(AuthService().currentUser!.photoURL!),
+                                        fit: BoxFit.cover,
+                                      )
+                                    : null,
+                              ),
+                              child: AuthService().currentUser?.photoURL == null
+                                  ? const Icon(Icons.person, size: 30, color: Color(0xFF00C4B4))
+                                  : null,
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    AuthService().currentUser?.displayName ?? 'User',
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF1A1A1A),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    AuthService().currentUser?.email ?? '',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                     _buildSettingsSection('General'),
                     _buildSettingsCard(
                       icon: Icons.monetization_on,
@@ -118,6 +182,20 @@ class SettingsScreen extends StatelessWidget {
                         ),
                       ),
                     ),
+
+                    
+                    const SizedBox(height: 30),
+                    _buildSettingsSection('Account'),
+                    _buildSettingsCard(
+                      icon: Icons.logout,
+                      title: 'Log Out',
+                      subtitle: 'Sign out of your account',
+                      onTap: () async {
+                        await AuthService().signOut();
+                        // Navigation is handled by the StreamBuilder in main.dart
+                      },
+                    ),
+                    const SizedBox(height: 30),
                   ],
                 );
               },
