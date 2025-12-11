@@ -5,6 +5,7 @@ import '../models/user_settings.dart';
 import '../models/fixed_expense.dart';
 import 'package:intl/intl.dart';
 import '../services/auth_service.dart';
+import '../services/biometric_service.dart';
 
 import '../widgets/app_drawer.dart';
 
@@ -74,7 +75,7 @@ class SettingsScreen extends StatelessWidget {
                         margin: const EdgeInsets.only(bottom: 24),
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: Theme.of(context).cardColor,
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: [
                             BoxShadow(
@@ -110,10 +111,10 @@ class SettingsScreen extends StatelessWidget {
                                 children: [
                                   Text(
                                     AuthService().currentUser?.displayName ?? 'User',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold,
-                                      color: Color(0xFF1A1A1A),
+                                      color: Theme.of(context).colorScheme.onSurface,
                                     ),
                                   ),
                                   const SizedBox(height: 4),
@@ -121,7 +122,7 @@ class SettingsScreen extends StatelessWidget {
                                     AuthService().currentUser?.email ?? '',
                                     style: TextStyle(
                                       fontSize: 14,
-                                      color: Colors.grey[600],
+                                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                                     ),
                                   ),
                                 ],
@@ -133,6 +134,7 @@ class SettingsScreen extends StatelessWidget {
                     ],
                     _buildSettingsSection('General'),
                     _buildSettingsCard(
+                      context,
                       icon: Icons.monetization_on,
                       title: 'Monthly Salary',
                       subtitle: currencyFormat.format(provider.settings.salary),
@@ -140,10 +142,20 @@ class SettingsScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     _buildSettingsCard(
+                      context,
                       icon: Icons.currency_exchange,
                       title: 'Currency',
                       subtitle: provider.settings.currency,
                       onTap: () => _showCurrencyDialog(context, provider),
+                    ),
+
+                    const SizedBox(height: 30),
+                    _buildSettingsCard(
+                      context,
+                      icon: Icons.calendar_today,
+                      title: 'Calendar System',
+                      subtitle: provider.settings.calendarSystem == 'BS' ? 'Nepali (BS)' : 'English (AD)',
+                      onTap: () => _showCalendarDialog(context, provider),
                     ),
                     
                     const SizedBox(height: 30),
@@ -152,23 +164,24 @@ class SettingsScreen extends StatelessWidget {
                     ...provider.fixedExpenses.map((expense) => Container(
                       margin: const EdgeInsets.only(bottom: 12),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Theme.of(context).cardColor,
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
-                          BoxShadow(color: Colors.grey.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
+                          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
                         ],
                       ),
                       child: ListTile(
                         leading: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFFFF0F0),
+                            color: const Color(0xFFFFF0F0).withOpacity(0.1),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: const Icon(Icons.receipt, color: Color(0xFFFF6B6B)),
                         ),
-                        title: Text(expense.name, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1A1A1A))),
-                        trailing: Text(currencyFormat.format(expense.amount), style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1A1A1A))),
+                        title: Text(expense.name, style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                        trailing: Text(currencyFormat.format(expense.amount), style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                        onTap: () => _showEditFixedExpenseDialog(context, provider, expense),
                       ),
                     )),
                     
@@ -177,7 +190,7 @@ class SettingsScreen extends StatelessWidget {
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF0FFF4),
+                          color: const Color(0xFFF0FFF4).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(color: const Color(0xFF4CAF50).withOpacity(0.3)),
                         ),
@@ -196,6 +209,7 @@ class SettingsScreen extends StatelessWidget {
                     const SizedBox(height: 30),
                     _buildSettingsSection('Account'),
                     _buildSettingsCard(
+                      context,
                       icon: Icons.logout,
                       title: 'Log Out',
                       subtitle: 'Sign out of your account',
@@ -222,13 +236,13 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSettingsCard({required IconData icon, required String title, required String subtitle, required VoidCallback onTap}) {
+  Widget _buildSettingsCard(BuildContext context, {required IconData icon, required String title, required String subtitle, required VoidCallback onTap}) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          BoxShadow(color: Colors.grey.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
         ],
       ),
       child: ListTile(
@@ -236,13 +250,13 @@ class SettingsScreen extends StatelessWidget {
         leading: Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: const Color(0xFFF0FDFC),
+            color: const Color(0xFFF0FDFC).withOpacity(0.1), // Dynamic opacity
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(icon, color: const Color(0xFF00C4B4)),
         ),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1A1A1A))),
-        subtitle: Text(subtitle, style: TextStyle(color: Colors.grey[600])),
+        title: Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+        subtitle: Text(subtitle, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
         trailing: const Icon(Icons.edit, color: Colors.grey, size: 20),
         onTap: onTap,
       ),
@@ -270,6 +284,8 @@ class SettingsScreen extends StatelessWidget {
                   salary: salary.toDouble(),
                   currency: provider.settings.currency,
                   isDarkMode: provider.settings.isDarkMode,
+                  isBiometricEnabled: provider.settings.isBiometricEnabled,
+                  calendarSystem: provider.settings.calendarSystem,
                   id: provider.settings.id
                 ));
                 Navigator.pop(context);
@@ -278,6 +294,50 @@ class SettingsScreen extends StatelessWidget {
             child: const Text('Save'),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showCalendarDialog(BuildContext context, AppProvider provider) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Select Calendar System'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: const Text('English (AD)'),
+              leading: Radio<String>(
+                value: 'AD',
+                groupValue: provider.settings.calendarSystem,
+                onChanged: (val) {
+                  provider.toggleCalendar('AD');
+                  Navigator.pop(context);
+                },
+              ),
+              onTap: () {
+                provider.toggleCalendar('AD');
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              title: const Text('Nepali (BS)'),
+              leading: Radio<String>(
+                value: 'BS',
+                groupValue: provider.settings.calendarSystem,
+                onChanged: (val) {
+                  provider.toggleCalendar('BS');
+                  Navigator.pop(context);
+                },
+              ),
+              onTap: () {
+                provider.toggleCalendar('BS');
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -297,6 +357,8 @@ class SettingsScreen extends StatelessWidget {
                 salary: provider.settings.salary,
                 currency: currency,
                 isDarkMode: provider.settings.isDarkMode,
+                isBiometricEnabled: provider.settings.isBiometricEnabled,
+                calendarSystem: provider.settings.calendarSystem,
                 id: provider.settings.id
               ));
               Navigator.pop(context);
@@ -341,6 +403,72 @@ class SettingsScreen extends StatelessWidget {
             },
             child: const Text('Save'),
           ),
+        ],
+      ),
+    );
+  }
+
+  void _showEditFixedExpenseDialog(BuildContext context, AppProvider provider, FixedExpense expense) {
+    String name = expense.name;
+    String amountText = expense.amount.toStringAsFixed(0);
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit Fixed Expense'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              decoration: const InputDecoration(labelText: 'Name'),
+              controller: TextEditingController(text: name),
+              onChanged: (value) => name = value,
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              decoration: const InputDecoration(labelText: 'Amount'),
+              keyboardType: TextInputType.number,
+              controller: TextEditingController(text: amountText),
+              onChanged: (value) => amountText = value,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+             onPressed: () {
+               // Only delete if user confirms? Or just add a delete button here?
+               // The request was to EDIT. But users might want to delete too.
+               // Existing UI didn't seem to have delete button visible in previous code?
+               // Wait, previous code map didn't show delete.
+               // Let's stick to update to be safe, maybe add delete if needed.
+               // Actually user said "i was not able to edit it".
+               Navigator.pop(context);
+             },
+             child: const Text('Cancel')
+          ),
+          TextButton(
+            onPressed: () {
+              final amount = int.tryParse(amountText);
+              if (amount != null && amount > 0 && name.isNotEmpty) {
+                provider.updateFixedExpense(FixedExpense(
+                  id: expense.id,
+                  name: name,
+                  amount: amount.toDouble()
+                ));
+                Navigator.pop(context);
+              }
+            },
+            child: const Text('Save'),
+          ),
+          TextButton(
+             onPressed: () {
+                // Keep delete functionality
+                if (expense.id != null) {
+                   provider.deleteFixedExpense(expense.id!);
+                   Navigator.pop(context);
+                }
+             },
+             child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          )
         ],
       ),
     );

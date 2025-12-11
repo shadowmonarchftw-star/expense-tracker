@@ -9,7 +9,8 @@ import 'providers/app_provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'services/auth_service.dart';
-import '../widgets/app_drawer.dart'; // Make sure to add import at top if distinct file
+import '../widgets/app_drawer.dart';
+import '../widgets/biometric_guard.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -37,8 +38,9 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<AppProvider>(
-      builder: (context, provider, child) {
+    return Selector<AppProvider, ThemeMode>(
+      selector: (context, provider) => provider.themeMode,
+      builder: (context, themeMode, child) {
         return MaterialApp(
           title: 'Expense Tracker',
           theme: ThemeData(
@@ -54,15 +56,18 @@ class MyApp extends StatelessWidget {
             colorScheme: ColorScheme.fromSeed(
               seedColor: Colors.teal, 
               brightness: Brightness.dark,
+              surface: const Color(0xFF1E1E1E),
+              onSurface: Colors.white,
             ),
             scaffoldBackgroundColor: const Color(0xFF121212),
             cardColor: const Color(0xFF1E1E1E),
+            iconTheme: const IconThemeData(color: Colors.white),
             appBarTheme: const AppBarTheme(
               backgroundColor: Colors.transparent,
               elevation: 0,
             ),
           ),
-          themeMode: provider.themeMode,
+          themeMode: themeMode,
           home: StreamBuilder<User?>(
             stream: AuthService().user,
             builder: (context, snapshot) {
@@ -73,7 +78,7 @@ class MyApp extends StatelessWidget {
               }
               
               if (snapshot.hasData) {
-                return const MainScreen();
+                return const BiometricGuard(child: MainScreen());
               }
               
               return const LoginScreen();

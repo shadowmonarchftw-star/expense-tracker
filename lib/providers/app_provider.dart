@@ -31,6 +31,9 @@ class AppProvider with ChangeNotifier {
 
   bool get isSynced => _firestoreService != null;
   
+  bool _isLoading = true;
+  bool get isLoading => _isLoading;
+
   int _selectedIndex = 0;
   int get selectedIndex => _selectedIndex;
   
@@ -51,6 +54,36 @@ class AppProvider with ChangeNotifier {
       salary: currentSettings.salary,
       currency: currentSettings.currency,
       isDarkMode: isDark,
+      isBiometricEnabled: currentSettings.isBiometricEnabled,
+      calendarSystem: currentSettings.calendarSystem,
+    );
+    await updateSettings(newSettings);
+  }
+
+  Future<void> toggleBiometric(bool isEnabled) async {
+    final currentSettings = settings;
+    final newSettings = UserSettings(
+      id: currentSettings.id,
+      salary: currentSettings.salary,
+      currency: currentSettings.currency,
+      isDarkMode: currentSettings.isDarkMode,
+      isBiometricEnabled: isEnabled,
+      calendarSystem: currentSettings.calendarSystem,
+    );
+    await updateSettings(newSettings);
+  }
+
+  bool get isNepaliDate => settings.calendarSystem == 'BS';
+
+  Future<void> toggleCalendar(String system) async {
+    final currentSettings = settings;
+    final newSettings = UserSettings(
+      id: currentSettings.id,
+      salary: currentSettings.salary,
+      currency: currentSettings.currency,
+      isDarkMode: currentSettings.isDarkMode,
+      isBiometricEnabled: currentSettings.isBiometricEnabled,
+      calendarSystem: system,
     );
     await updateSettings(newSettings);
   }
@@ -102,7 +135,11 @@ class AppProvider with ChangeNotifier {
       _settings = data;
       notifyListeners();
     }, onError: (e) => print("Firestore Settings Error: $e"));
+
     
+    _isLoading = false;
+    notifyListeners();
+
     _checkAndMigrate();
   }
   
@@ -157,7 +194,9 @@ class AppProvider with ChangeNotifier {
     _transactions = await _db.readAllTransactions();
     _budgets = await _db.readAllBudgets();
     _fixedExpenses = await _db.readAllFixedExpenses();
+    _fixedExpenses = await _db.readAllFixedExpenses();
     _settings = await _db.readSettings();
+    _isLoading = false;
     notifyListeners();
   }
 
@@ -255,6 +294,22 @@ class AppProvider with ChangeNotifier {
        } catch (e) { print("Add Expense Error: $e"); }
     } else {
       await _db.createFixedExpense(expense);
+      await loadLocalData();
+    }
+  }
+
+  Future<void> updateFixedExpense(FixedExpense expense) async {
+    if (isSynced) {
+       final index = _fixedExpenses.indexWhere((e) => e.id == expense.id);
+       if (index != -1) {
+         _fixedExpenses[index] = expense;
+         notifyListeners();
+       }
+       try {
+         await _firestoreService!.updateFixedExpense(expense);
+       } catch (e) { print("Update Expense Error: $e"); }
+    } else {
+      await _db.updateFixedExpense(expense);
       await loadLocalData();
     }
   }

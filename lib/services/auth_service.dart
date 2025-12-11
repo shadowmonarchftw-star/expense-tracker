@@ -7,7 +7,7 @@ class AuthService {
   final GoogleSignIn _googleSignIn = GoogleSignIn();
 
   // Stream of auth changes
-  Stream<User?> get user => _auth.authStateChanges();
+  late final Stream<User?> user = _auth.authStateChanges();
 
   // Current user
   User? get currentUser => _auth.currentUser;

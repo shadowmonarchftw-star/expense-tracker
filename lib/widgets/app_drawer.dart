@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_provider.dart'; // Adjust path if needed
 import '../services/auth_service.dart';
+import '../services/biometric_service.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -102,6 +103,38 @@ class AppDrawer extends StatelessWidget {
                 onChanged: (val) {
                   provider.toggleTheme(val);
                 },
+              );
+            },
+          ),
+          
+          // Biometric Switch
+          Consumer<AppProvider>(
+            builder: (context, provider, _) {
+              return FutureBuilder<bool>(
+                future: BiometricService().isBiometricsAvailable(),
+                builder: (context, snapshot) {
+                  final available = snapshot.data ?? false;
+                  if (!available && !provider.settings.isBiometricEnabled) {
+                     return const SizedBox.shrink(); // Hide if not available and not already enabled
+                  }
+                  
+                  return SwitchListTile(
+                    title: const Text('Biometric Security'),
+                    secondary: const Icon(Icons.fingerprint),
+                    value: provider.settings.isBiometricEnabled,
+                    onChanged: (val) async {
+                      if (val) {
+                         final service = BiometricService();
+                         final authenticated = await service.authenticate();
+                         if (authenticated) {
+                           await provider.toggleBiometric(true);
+                         }
+                      } else {
+                         await provider.toggleBiometric(false);
+                      }
+                    },
+                  );
+                }
               );
             },
           ),

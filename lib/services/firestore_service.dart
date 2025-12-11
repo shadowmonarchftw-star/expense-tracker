@@ -94,6 +94,11 @@ class FirestoreService {
     }
   }
 
+  Future<void> updateFixedExpense(FixedExpense expense) async {
+     if (expense.id == null) return;
+     await _fixedExpensesRef.doc(expense.id).update(expense.toMap());
+  }
+
   Future<void> deleteFixedExpense(String id) async {
     await _fixedExpensesRef.doc(id).delete();
   }

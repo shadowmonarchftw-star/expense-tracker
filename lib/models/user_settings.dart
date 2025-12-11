@@ -3,12 +3,16 @@ class UserSettings {
   final double salary;
   final String currency;
   final bool isDarkMode;
+  final bool isBiometricEnabled;
+  final String calendarSystem; // 'AD' or 'BS'
 
   UserSettings({
     this.id,
     required this.salary,
     this.currency = '\$',
     this.isDarkMode = false,
+    this.isBiometricEnabled = false,
+    this.calendarSystem = 'AD',
   });
 
   Map<String, dynamic> toMap() {
@@ -17,6 +21,8 @@ class UserSettings {
       'salary': salary,
       'currency': currency,
       'isDarkMode': isDarkMode ? 1 : 0,
+      'isBiometricEnabled': isBiometricEnabled ? 1 : 0,
+      'calendarSystem': calendarSystem,
     };
   }
 
@@ -26,6 +32,8 @@ class UserSettings {
       salary: map['salary'],
       currency: map['currency'] ?? '\$',
       isDarkMode: (map['isDarkMode'] == 1 || map['isDarkMode'] == true),
+      isBiometricEnabled: (map['isBiometricEnabled'] == 1 || map['isBiometricEnabled'] == true),
+      calendarSystem: map['calendarSystem'] ?? 'AD',
     );
   }
 }

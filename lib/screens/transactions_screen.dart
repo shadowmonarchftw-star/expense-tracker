@@ -3,6 +3,9 @@ import 'package:provider/provider.dart';
 import '../providers/app_provider.dart';
 import '../models/transaction.dart';
 import 'package:intl/intl.dart';
+import 'package:nepali_utils/nepali_utils.dart';
+import 'package:nepali_date_picker/nepali_date_picker.dart' as picker;
+import '../utils/sms_parser.dart';
 
 import '../widgets/app_drawer.dart';
 
@@ -80,11 +83,11 @@ class TransactionsScreen extends StatelessWidget {
                         width: 160,
                         margin: const EdgeInsets.only(right: 12),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: Theme.of(context).cardColor,
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.grey.withOpacity(0.1),
+                              color: Colors.black.withOpacity(0.1),
                               blurRadius: 10,
                               offset: const Offset(0, 5),
                             ),
@@ -97,21 +100,21 @@ class TransactionsScreen extends StatelessWidget {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(budget.category, 
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1A1A1A)),
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Theme.of(context).colorScheme.onSurface),
                                 overflow: TextOverflow.ellipsis),
                               const SizedBox(height: 12),
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(10),
                                 child: LinearProgressIndicator(
                                   value: progress,
-                                  backgroundColor: const Color(0xFFF5F7FA),
+                                  backgroundColor: Theme.of(context).colorScheme.surface,
                                   color: progress > 0.9 ? const Color(0xFFFF6B6B) : const Color(0xFF00C4B4),
                                   minHeight: 8,
                                 ),
                               ),
                               const SizedBox(height: 12),
                               Text('${currencyFormat.format(spent)} / ${currencyFormat.format(budget.amount)}',
-                                style: const TextStyle(fontSize: 12, color: Color(0xFF1A1A1A))),
+                                style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface)),
                             ],
                           ),
                         ),
@@ -157,11 +160,11 @@ class TransactionsScreen extends StatelessWidget {
                             margin: const EdgeInsets.only(bottom: 16),
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: Theme.of(context).cardColor,
                               borderRadius: BorderRadius.circular(20),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.grey.withOpacity(0.05),
+                                  color: Colors.black.withOpacity(0.05),
                                   blurRadius: 10,
                                   offset: const Offset(0, 4),
                                 )
@@ -172,7 +175,7 @@ class TransactionsScreen extends StatelessWidget {
                                 Container(
                                   padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
-                                    color: isExpense ? const Color(0xFFFFF0F0) : const Color(0xFFF0FFF4),
+                                    color: (isExpense ? const Color(0xFFFF6B6B) : const Color(0xFF4CAF50)).withOpacity(0.1),
                                     borderRadius: BorderRadius.circular(16),
                                   ),
                                   child: Icon(
@@ -189,12 +192,14 @@ class TransactionsScreen extends StatelessWidget {
                                         transaction.subCategory.isNotEmpty
                                             ? '${transaction.category} - ${transaction.subCategory}'
                                             : transaction.category,
-                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Theme.of(context).colorScheme.onSurface),
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                        DateFormat.yMMMd().format(transaction.timestamp),
-                                        style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                                        provider.isNepaliDate 
+                                          ? NepaliDateFormat.yMMMd().format(NepaliDateTime.fromDateTime(transaction.timestamp))
+                                          : DateFormat.yMMMd().format(transaction.timestamp),
+                                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6), fontSize: 12),
                                       ),
                                     ],
                                   ),
@@ -202,7 +207,7 @@ class TransactionsScreen extends StatelessWidget {
                                 Text(
                                   currencyFormat.format(transaction.amount),
                                   style: TextStyle(
-                                    color: isExpense ? const Color(0xFF1A1A1A) : const Color(0xFF4CAF50),
+                                    color: isExpense ? Theme.of(context).colorScheme.onSurface : const Color(0xFF4CAF50),
                                     fontWeight: FontWeight.bold,
                                     fontSize: 16,
                                   ),
@@ -232,6 +237,7 @@ class TransactionsScreen extends StatelessWidget {
     String subCategory = '';
     String amountText = '';
     String type = 'expense';
+    DateTime selectedDate = DateTime.now();
     
     // Get categories from budgets for expenses
     final budgetCategories = provider.budgets.map((b) => b.category).toList();
@@ -276,10 +282,101 @@ class TransactionsScreen extends StatelessWidget {
                     },
                   ),
                   const SizedBox(height: 16),
+                  
+                  // Import SMS Button
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      final ParsedTransaction? result = await _showSmsImportDialog(context);
+                      if (result != null) {
+                        setState(() {
+                          amountText = result.amount.toString();
+                          selectedDate = result.date;
+                        });
+                        
+                        if (provider.isNepaliDate) {
+                           final bsDate = NepaliDateTime.fromDateTime(result.date);
+                           final formatted = NepaliDateFormat.yMMMd().format(bsDate);
+                           ScaffoldMessenger.of(context).showSnackBar(
+                             SnackBar(content: Text("Date converted to BS: $formatted")),
+                           );
+                        }
+                      }
+                    },
+                    icon: const Icon(Icons.sms),
+                    label: const Text("Import from SMS"),
+                  ),
+                  const SizedBox(height: 16),
+
                   TextField(
                     decoration: const InputDecoration(labelText: 'Amount'),
-                    keyboardType: TextInputType.number,
+                    keyboardType: TextInputType.numberWithOptions(decimal: true),
+                    controller: TextEditingController(text: amountText), // Use controller to update text
                     onChanged: (value) => amountText = value,
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Date Picker
+                  InkWell(
+                    onTap: () async {
+                      if (provider.isNepaliDate) {
+                        final NepaliDateTime? picked = await picker.showMaterialDatePicker(
+                          context: context,
+                          initialDate: NepaliDateTime.fromDateTime(selectedDate),
+                          firstDate: NepaliDateTime(2070),
+                          lastDate: NepaliDateTime.now(),
+                          builder: (context, child) {
+                            return Theme(
+                              data: Theme.of(context).copyWith(
+                                colorScheme: const ColorScheme.light(primary: Color(0xFF00C4B4)),
+                              ),
+                              child: child!,
+                            );
+                          },
+                        );
+                        if (picked != null) {
+                          setState(() {
+                            selectedDate = picked.toDateTime();
+                          });
+                        }
+                      } else {
+                        final DateTime? picked = await showDatePicker(
+                          context: context,
+                          initialDate: selectedDate,
+                          firstDate: DateTime(2020),
+                          lastDate: DateTime.now(),
+                          builder: (context, child) {
+                            return Theme(
+                              data: Theme.of(context).copyWith(
+                                colorScheme: const ColorScheme.light(primary: Color(0xFF00C4B4)),
+                              ),
+                              child: child!,
+                            );
+                          },
+                        );
+                        if (picked != null && picked != selectedDate) {
+                          setState(() {
+                            selectedDate = picked;
+                          });
+                        }
+                      }
+                    },
+                    child: InputDecorator(
+                      decoration: const InputDecoration(
+                        labelText: 'Date',
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(provider.isNepaliDate 
+                            ? NepaliDateFormat.yMMMd().format(NepaliDateTime.fromDateTime(selectedDate))
+                            : DateFormat.yMMMd().format(selectedDate)
+                          ),
+                          const Icon(Icons.calendar_today, size: 20, color: Colors.grey),
+                        ],
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 16),
                   
@@ -333,11 +430,11 @@ class TransactionsScreen extends StatelessWidget {
               ),
               TextButton(
                 onPressed: () {
-                  final amount = int.tryParse(amountText);
+                  final amount = double.tryParse(amountText);
                   if (amount != null && amount > 0 && category.isNotEmpty) {
                     provider.addTransaction(Transaction(
-                      timestamp: DateTime.now(),
-                      amount: amount.toDouble(),
+                      timestamp: selectedDate,
+                      amount: amount,
                       category: category,
                       subCategory: subCategory,
                       type: type,
@@ -350,6 +447,50 @@ class TransactionsScreen extends StatelessWidget {
             ],
           );
         },
+      ),
+    );
+  }
+
+  Future<ParsedTransaction?> _showSmsImportDialog(BuildContext context) {
+    String text = '';
+    return showDialog<ParsedTransaction>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Parse SMS'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+             const Text("Paste the transaction SMS below:", style: TextStyle(fontSize: 12, color: Colors.grey)),
+             const SizedBox(height: 8),
+             TextField(
+               maxLines: 4,
+               decoration: const InputDecoration(
+                 border: OutlineInputBorder(),
+                 hintText: 'Your bank/wallet SMS...',
+               ),
+               onChanged: (val) => text = val,
+             ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              final parsed = SmsParser.parse(text);
+              if (parsed != null) {
+                Navigator.pop(context, parsed);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Could not parse SMS. Try manual entry.')),
+                );
+              }
+            },
+            child: const Text('Parse'),
+          ),
+        ],
       ),
     );
   }

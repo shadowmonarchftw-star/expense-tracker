@@ -79,11 +79,11 @@ class BudgetScreen extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Theme.of(context).cardColor,
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.grey.withOpacity(0.08),
+                            color: Colors.black.withOpacity(0.08),
                             blurRadius: 15,
                             offset: const Offset(0, 5),
                           ),
@@ -91,47 +91,87 @@ class BudgetScreen extends StatelessWidget {
                       ),
                       child: Column(
                         children: [
-                          _buildRow('Total Income', currencyFormat.format(totalIncome)),
+                          _buildRow(context, 'Total Income', currencyFormat.format(totalIncome)),
                           const Divider(height: 24),
-                          _buildRow('Fixed Expenses', currencyFormat.format(fixedExpenses), color: const Color(0xFFFF6B6B)),
-                          _buildRow('Allocated', currencyFormat.format(allocated), color: Colors.orange),
+                          _buildRow(context, 'Fixed Expenses', currencyFormat.format(fixedExpenses), color: const Color(0xFFFF6B6B)),
+                          _buildRow(context, 'Allocated', currencyFormat.format(allocated), color: Colors.orange),
                           const Divider(height: 24),
-                          _buildRow('Remaining to Budget', currencyFormat.format(remaining), color: remaining >= 0 ? const Color(0xFF00C4B4) : const Color(0xFFFF6B6B), bold: true),
+                          _buildRow(context, 'Remaining to Budget', currencyFormat.format(remaining), color: remaining >= 0 ? const Color(0xFF00C4B4) : const Color(0xFFFF6B6B), bold: true),
                         ],
                       ),
                     ),
                     const SizedBox(height: 30),
-                    const Text('Budget Categories', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1A1A1A))),
+                    Text('Budget Categories', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
                     const SizedBox(height: 16),
                     
-                    ...currentBudgets.map((budget) => Container(
-                      margin: const EdgeInsets.only(bottom: 16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.05),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                        title: Text(budget.category, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1A1A1A))),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(currencyFormat.format(budget.amount), 
-                                style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF00C4B4), fontSize: 16)),
-                            const SizedBox(width: 8),
-                            const Icon(Icons.chevron_right, color: Colors.grey),
+                    ...currentBudgets.map((budget) {
+                      final spent = provider.getSpentAmountForCategory(budget.category);
+                      final progress = (spent / budget.amount).clamp(0.0, 1.0);
+                      final isOverBudget = spent > budget.amount;
+
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 16),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).cardColor,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
                           ],
                         ),
-                        onTap: () => _showAddBudgetDialog(context, budget: budget),
-                      ),
-                    )),
+                        child: InkWell(
+                          onTap: () => _showAddBudgetDialog(context, budget: budget),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(budget.category, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Theme.of(context).colorScheme.onSurface)),
+                                  Row(
+                                    children: [
+                                      Text(currencyFormat.format(budget.amount), 
+                                          style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF00C4B4), fontSize: 16)),
+                                      const SizedBox(width: 4),
+                                      const Icon(Icons.chevron_right, color: Colors.grey, size: 20),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child: LinearProgressIndicator(
+                                  value: progress,
+                                  backgroundColor: Theme.of(context).colorScheme.surface,
+                                  color: isOverBudget ? const Color(0xFFFF6B6B) : const Color(0xFF00C4B4),
+                                  minHeight: 12,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Spent: ${currencyFormat.format(spent)}',
+                                    style: TextStyle(
+                                      fontSize: 12, 
+                                      color: isOverBudget ? const Color(0xFFFF6B6B) : Colors.grey,
+                                      fontWeight: isOverBudget ? FontWeight.bold : FontWeight.normal
+                                    )
+                                  ),
+                                  Text('${(progress * 100).toStringAsFixed(1)}%', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }),
                   ],
                 ),
               ),
@@ -147,17 +187,17 @@ class BudgetScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildRow(String label, String value, {Color? color, bool bold = false}) {
+  Widget _buildRow(BuildContext context, String label, String value, {Color? color, bool bold = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: Color(0xFF1A1A1A))),
+          Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
           Text(
             value,
             style: TextStyle(
-              color: color ?? const Color(0xFF1A1A1A),
+              color: color ?? Theme.of(context).colorScheme.onSurface,
               fontWeight: bold ? FontWeight.bold : null,
             ),
           ),

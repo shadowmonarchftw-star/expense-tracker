@@ -36,6 +36,7 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         multiDexEnabled = true
+        setProperty("archivesBaseName", "save-up")
     }
 
     buildTypes {

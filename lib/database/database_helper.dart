@@ -214,6 +214,22 @@ class DatabaseHelper {
     return result.map((json) => FixedExpense.fromMap(json)).toList();
   }
 
+  Future<int> updateFixedExpense(FixedExpense expense) async {
+    final db = await database;
+    if (expense.id == null) return 0;
+    try {
+      final intId = int.parse(expense.id!);
+      final map = expense.toMap();
+      map['id'] = intId;
+      return await db.update(
+        'fixed_expenses',
+        map,
+        where: 'id = ?',
+        whereArgs: [intId],
+      );
+    } catch (e) { return 0; }
+  }
+
   Future<int> deleteFixedExpense(String id) async {
     final db = await database;
     try {
