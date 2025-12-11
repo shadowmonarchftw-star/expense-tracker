@@ -3,31 +3,35 @@ import 'package:path/path.dart';
 import '../models/transaction.dart' as models;
 import '../models/budget.dart';
 import '../models/fixed_expense.dart';
+import '../models/fixed_expense.dart';
 import '../models/user_settings.dart';
+import '../models/goal.dart' as models;
+import '../models/goal.dart' as models;
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
   static Database? _database;
-  static const _databaseVersion = 3; // New: Database version constant
-  static const _databaseName = 'expense_tracker.db'; // New: Database name constant
+  static const _databaseVersion = 9; // Bump version for migration fix
+
+  static const _databaseName = 'expense_tracker.db';
 
   DatabaseHelper._init();
 
   Future<Database> get database async {
     if (_database != null) return _database!;
-    _database = await _initDatabase(); // Changed to _initDatabase
+    _database = await _initDatabase(); 
     return _database!;
   }
 
-  Future<Database> _initDatabase() async { // Renamed from _initDB
+  Future<Database> _initDatabase() async { 
     final dbPath = await getDatabasesPath();
-    final path = join(dbPath, _databaseName); // Using _databaseName
+    final path = join(dbPath, _databaseName); 
 
     return await openDatabase(
       path,
-      version: _databaseVersion, // Using _databaseVersion
-      onCreate: _onCreate, // Renamed from _createDB
-      onUpgrade: _onUpgrade, // Handle migration
+      version: _databaseVersion, 
+      onCreate: _onCreate, 
+      onUpgrade: _onUpgrade, 
     );
   }
 
@@ -39,22 +43,115 @@ class DatabaseHelper {
     // New: Handle upgrade to version 3
     if (oldVersion < 3) {
       // Version 3: Add isDarkMode to settings table
-      // Check if column exists first to be safe, or just try add
       try {
         await db.execute('ALTER TABLE settings ADD COLUMN isDarkMode INTEGER DEFAULT 0');
       } catch (e) {
-        // Column might already exist if dev did something weird, ignore
         print("Column isDarkMode might already exist: $e");
+      }
+    }
+    if (oldVersion < 4) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS goals (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          targetAmount REAL NOT NULL,
+          savedAmount REAL NOT NULL,
+          color INTEGER NOT NULL,
+          icon INTEGER NOT NULL,
+          notes TEXT
+        )
+      ''');
+    }
+    if (oldVersion < 5) {
+       try {
+         await db.execute('ALTER TABLE goals ADD COLUMN lastUpdated TEXT');
+       } catch (_) {}
+    }
+    if (oldVersion < 6) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS goal_transactions (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          goalId TEXT NOT NULL,
+          amount REAL NOT NULL,
+          date TEXT NOT NULL,
+          notes TEXT
+        )
+      ''');
+      
+      // Migration: Create initial transaction for existing goals
+      try {
+        final existingGoals = await db.query('goals');
+        for (var goal in existingGoals) {
+          final savedAmount = (goal['savedAmount'] as num?)?.toDouble() ?? 0.0;
+          if (savedAmount > 0) {
+            final goalId = goal['id'].toString();
+            final lastUpdated = goal['lastUpdated'] as String? ?? DateTime.now().toIso8601String();
+            
+            await db.insert('goal_transactions', {
+              'goalId': goalId,
+              'amount': savedAmount,
+              'date': lastUpdated,
+              'notes': 'Initial Balance'
+            });
+          }
+        }
+      } catch (e) {
+        print("Migration Error: $e");
+      }
+    }
+    if (oldVersion < 7) {
+       try {
+         await db.execute('ALTER TABLE goals ADD COLUMN lastAddedAmount REAL');
+       } catch (_) {}
+    }
+    if (oldVersion < 8) {
+       try {
+         await db.execute('ALTER TABLE settings ADD COLUMN isDailyReminderEnabled INTEGER DEFAULT 0');
+       } catch (_) {}
+    }
+    
+    // Fix: Ensure initial transactions exist if migration failed previously
+    if (oldVersion < 9) {
+      try {
+        final existingGoals = await db.query('goals');
+        for (var goal in existingGoals) {
+          final goalId = goal['id'].toString();
+          final savedAmount = (goal['savedAmount'] as num?)?.toDouble() ?? 0.0;
+          
+          if (savedAmount > 0) {
+            final txCount = Sqflite.firstIntValue(await db.rawQuery(
+              'SELECT COUNT(*) FROM goal_transactions WHERE goalId = ?', 
+              [goalId]
+            ));
+            
+            if ((txCount ?? 0) == 0) {
+               final lastUpdated = goal['lastUpdated'] as String? ?? DateTime.now().toIso8601String();
+               await db.insert('goal_transactions', {
+                  'goalId': goalId,
+                  'amount': savedAmount,
+                  'date': lastUpdated,
+                  'notes': 'Initial Balance'
+               });
+            }
+          }
+        }
+      } catch (e) {
+        print("Migration v9 Error: $e");
       }
     }
   }
 
   Future _onCreate(Database db, int version) async { // Renamed from _createDB
+    // ... existing tables ...
     const idType = 'INTEGER PRIMARY KEY AUTOINCREMENT';
     const textType = 'TEXT NOT NULL';
     const realType = 'REAL NOT NULL';
     const intType = 'INTEGER NOT NULL';
-
+    
+    // ... (transactions, budgets, fixed_expenses, settings) ...
+    // Note: I will only show the modified parts in ReplaceFileContent to keep it efficient.
+    // Wait, the tool requires contextual replacement.
+    
     await db.execute('''
       CREATE TABLE transactions (
         id $idType,
@@ -90,7 +187,34 @@ class DatabaseHelper {
         id $idType,
         salary $realType,
         currencyCode $textType,
-        isDarkMode INTEGER DEFAULT 0 -- New: Added isDarkMode column
+        isDarkMode INTEGER DEFAULT 0,
+        isDailyReminderEnabled INTEGER DEFAULT 0
+      )
+    ''');
+    
+    // New Goals Table with lastUpdated
+    await db.execute('''
+      CREATE TABLE goals (
+        id $idType,
+        name $textType,
+        targetAmount $realType,
+        savedAmount $realType,
+        color $intType,
+        icon $intType,
+        notes TEXT,
+        lastUpdated TEXT,
+        lastAddedAmount REAL
+      )
+    ''');
+
+    // New Goal Transactions Table
+    await db.execute('''
+      CREATE TABLE goal_transactions (
+        id $idType,
+        goalId $textType,
+        amount $realType,
+        date $textType,
+        notes TEXT
       )
     ''');
   }
@@ -260,6 +384,85 @@ class DatabaseHelper {
       return UserSettings.fromMap(result.first);
     }
     return null;
+  }
+
+  // Goals CRUD
+  Future<int> createGoal(models.Goal goal) async {
+    final db = await database;
+    final map = goal.toMap();
+    if (map['id'] == null) {
+      map.remove('id');
+    } else {
+       try { map['id'] = int.parse(map['id']); } catch(e) { map.remove('id'); }
+    }
+    return await db.insert('goals', map);
+  }
+
+  Future<List<models.Goal>> readAllGoals() async {
+    final db = await database;
+    final result = await db.query('goals', orderBy: 'lastUpdated DESC'); 
+    return result.map((json) => models.Goal.fromMap(json)).toList();
+  }
+
+  // --- Goal Transactions ---
+  // Using imported 'goal_transaction.dart' as goal_model for now?
+  // Need to import it at top of file, but I can't edit imports easily with this tool if they are at top.
+  // I will assume I need to handle Map logic here or standard CRUD.
+  // Wait, I can just use Map<String, dynamic> output or add proper import later.
+  // Let's rely on Map for internal helper usage or raw queries.
+  
+  Future<List<Map<String, dynamic>>> readGoalTransactions(String goalId) async {
+    final db = await database;
+    return await db.query('goal_transactions', where: 'goalId = ?', whereArgs: [goalId], orderBy: 'date DESC');
+  }
+
+  Future<int> createGoalTransaction(Map<String, dynamic> transaction) async {
+    final db = await database;
+    final map = Map<String, dynamic>.from(transaction); // Copy
+    if (map['id'] == null) {
+      map.remove('id');
+    }
+    return await db.insert('goal_transactions', map);
+  }
+
+  Future<int> updateGoalTransaction(Map<String, dynamic> transaction) async {
+    final db = await database;
+    return await db.update(
+      'goal_transactions',
+      transaction,
+      where: 'id = ?',
+      whereArgs: [transaction['id']],
+    );
+  }
+
+  Future<int> deleteGoalTransaction(String id) async {
+    final db = await database;
+    return await db.delete('goal_transactions', where: 'id = ?', whereArgs: [id]);
+  }
+
+
+  Future<int> updateGoal(models.Goal goal) async {
+    final db = await database;
+    if (goal.id == null) return 0;
+    try {
+      final intId = int.parse(goal.id!);
+      final map = goal.toMap();
+      map['id'] = intId;
+      return await db.update(
+        'goals',
+        map,
+        where: 'id = ?',
+        whereArgs: [intId],
+      );
+    } catch (e) { return 0; }
+  }
+
+  Future<int> deleteGoal(String id) async {
+    final db = await database;
+    try {
+      final intId = int.parse(id);
+      return await db.delete('goals', where: 'id = ?', whereArgs: [intId]);
+    } catch (e) { return 0; }
   }
 
   Future close() async {

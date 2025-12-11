@@ -74,13 +74,23 @@ class AppDrawer extends StatelessWidget {
                       Navigator.pop(context);
                     },
                   ),
+                  ListTile(
+                    leading: const Icon(Icons.flag),
+                    title: const Text('Goals'),
+                    selected: provider.selectedIndex == 3,
+                    selectedColor: theme.colorScheme.primary,
+                    onTap: () {
+                      provider.setTabIndex(3);
+                      Navigator.pop(context);
+                    },
+                  ),
                    ListTile(
                     leading: const Icon(Icons.settings),
                     title: const Text('Settings'),
-                    selected: provider.selectedIndex == 3,
+                    selected: provider.selectedIndex == 4, // Shifted index
                     selectedColor: theme.colorScheme.primary,
                      onTap: () {
-                      provider.setTabIndex(3);
+                      provider.setTabIndex(4); // Shifted index
                       Navigator.pop(context);
                     },
                   ),

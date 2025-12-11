@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/transactions_screen.dart';
 import 'screens/budget_screen.dart';
+import 'screens/goals_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/login_screen.dart';
 import 'providers/app_provider.dart';
@@ -11,11 +12,15 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'services/auth_service.dart';
 import '../widgets/app_drawer.dart';
 import '../widgets/biometric_guard.dart';
+import 'services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
     await Firebase.initializeApp();
+    // Initialize Notifications
+    await NotificationService().init();
+    
     runApp(
       ChangeNotifierProvider(
         create: (_) => AppProvider(),
@@ -42,7 +47,7 @@ class MyApp extends StatelessWidget {
       selector: (context, provider) => provider.themeMode,
       builder: (context, themeMode, child) {
         return MaterialApp(
-          title: 'Expense Tracker',
+          title: 'Save Up',
           theme: ThemeData(
             colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
             useMaterial3: true,
@@ -102,6 +107,7 @@ class _MainScreenState extends State<MainScreen> {
     const DashboardScreen(),
     const TransactionsScreen(),
     const BudgetScreen(),
+    const GoalsScreen(),
     const SettingsScreen(),
   ];
 
@@ -131,6 +137,10 @@ class _MainScreenState extends State<MainScreen> {
           NavigationDestination(
             icon: Icon(Icons.account_balance_wallet),
             label: 'Budget',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.flag),
+            label: 'Goals',
           ),
           NavigationDestination(
             icon: Icon(Icons.settings),

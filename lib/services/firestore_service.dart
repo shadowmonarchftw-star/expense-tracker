@@ -3,6 +3,7 @@ import '../models/transaction.dart' as models;
 import '../models/budget.dart';
 import '../models/fixed_expense.dart';
 import '../models/user_settings.dart';
+import '../models/goal.dart' as models;
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -115,5 +116,70 @@ class FirestoreService {
 
   Future<void> updateSettings(UserSettings settings) async {
     await _settingsRef.doc('config').set(settings.toMap());
+  }
+
+  // --- Goals ---
+  CollectionReference get _goalsRef => _userDoc.collection('goals');
+
+  Stream<List<models.Goal>> streamGoals() {
+    return _goalsRef.snapshots().map((snapshot) {
+      return snapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        data['id'] = doc.id;
+        return models.Goal.fromMap(data);
+      }).toList();
+    });
+  }
+
+  Future<String> addGoal(models.Goal goal) async {
+    if (goal.id != null) {
+      await _goalsRef.doc(goal.id).set(goal.toMap());
+      return goal.id!;
+    } else {
+      final ref = await _goalsRef.add(goal.toMap());
+      return ref.id;
+    }
+  }
+
+  Future<void> updateGoal(models.Goal goal) async {
+    if (goal.id == null) return;
+    await _goalsRef.doc(goal.id).update(goal.toMap());
+  }
+
+  Future<void> deleteGoal(String id) async {
+    await _goalsRef.doc(id).delete();
+  }
+
+  // --- Goal Transactions ---
+  CollectionReference _getGoalTransactionsRef(String goalId) {
+    return _userDoc.collection('goals').doc(goalId).collection('transactions');
+  }
+
+  Stream<List<Map<String, dynamic>>> streamGoalTransactions(String goalId) {
+    return _getGoalTransactionsRef(goalId).orderBy('date', descending: true).snapshots().map((snapshot) {
+      return snapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        data['id'] = doc.id;
+        data['goalId'] = goalId; // Ensure goalId context
+        return data;
+      }).toList();
+    });
+  }
+
+  Future<void> addGoalTransaction(Map<String, dynamic> transaction) async {
+    if (transaction['id'] != null) {
+      await _getGoalTransactionsRef(transaction['goalId']).doc(transaction['id']).set(transaction);
+    } else {
+      await _getGoalTransactionsRef(transaction['goalId']).add(transaction);
+    }
+  }
+
+  Future<void> updateGoalTransaction(Map<String, dynamic> transaction) async {
+    if (transaction['id'] == null) return;
+    await _getGoalTransactionsRef(transaction['goalId']).doc(transaction['id']).update(transaction);
+  }
+
+  Future<void> deleteGoalTransaction(String goalId, String id) async {
+    await _getGoalTransactionsRef(goalId).doc(id).delete();
   }
 }

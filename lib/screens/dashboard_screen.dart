@@ -91,13 +91,33 @@ class DashboardScreen extends StatelessWidget {
                     const SizedBox(height: 24),
                     
                     // Greeting Section
-                    Text(
-                      'Hello, ${AuthService().currentUser?.displayName?.split(' ').first ?? 'User'}',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.9),
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500,
-                      ),
+                    // Greeting Section
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Hello, ${AuthService().currentUser?.displayName?.split(' ').first ?? 'User'}',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.9),
+                                fontSize: 18,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            const Text("Save Up", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.savings, color: Colors.white, size: 28),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 8),
                     
@@ -148,10 +168,38 @@ class DashboardScreen extends StatelessWidget {
                         Expanded(
                           child: _SummaryCard(
                             title: 'Expenses',
-                            amount: currencyFormat.format(totalExpense),
+                            amount: currencyFormat.format(variableExpenses),
                             color: const Color(0xFFFF6B6B),
                             icon: Icons.arrow_upward,
                             bgColor: const Color(0xFFFF6B6B), // Pass base color for opacity handling inside widget
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // New Row: Goal Contribution & Fixed Expenses
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _SummaryCard(
+                            title: 'Goal Contribution',
+                            amount: currencyFormat.format(
+                              monthTransactions.where((t) => t.subCategory == 'Savings').fold(0.0, (sum, t) => sum + t.amount)
+                            ),
+                            color: const Color(0xFF00C4B4),
+                            icon: Icons.savings,
+                            bgColor: const Color(0xFF00C4B4),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: _SummaryCard(
+                            title: 'Fixed Expenses',
+                            amount: currencyFormat.format(fixedExpenses),
+                            color: Colors.orange,
+                            icon: Icons.receipt_long,
+                            bgColor: Colors.orange,
                           ),
                         ),
                       ],

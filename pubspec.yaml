@@ -30,6 +30,8 @@ dependencies:
   local_auth: ^2.1.6
   nepali_utils: ^3.0.0
   nepali_date_picker: ^5.0.0
+  flutter_local_notifications: ^19.5.0
+  timezone: ^0.10.1
 
 dev_dependencies:
   flutter_test:
@@ -37,11 +39,18 @@ dev_dependencies:
   flutter_lints: ^4.0.0
   flutter_launcher_icons: "^0.13.1"
 
-flutter_icons:
+flutter_launcher_icons:
   android: "ic_launcher"
-  ios: true
+  ios: false
   image_path: "assets/icon/icon.png"
   min_sdk_android: 21
+  adaptive_icon_background: "#121212"
+  adaptive_icon_foreground: "assets/icon/icon.png"
+  web:
+    generate: true
+    image_path: "assets/icon/icon.png"
+    background_color: "#121212"
+    theme_color: "#121212"
 
 flutter:
   uses-material-design: true

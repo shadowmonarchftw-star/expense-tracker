@@ -143,10 +143,48 @@ class SettingsScreen extends StatelessWidget {
                     const SizedBox(height: 16),
                     _buildSettingsCard(
                       context,
+                      icon: Icons.flag,
+                      title: 'Manage Goals',
+                      subtitle: '${provider.goals.length} active goals',
+                      onTap: () {
+                         provider.setTabIndex(3); // Navigate to Goals Tab
+                         // If we were pushed here, we might need to pop? 
+                         // But Settings is a tab itself. So just switching tab is fine.
+                         // Wait, if we are in Settings Tab (index 4), switching to Goals (index 3) acts like a reset.
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    _buildSettingsCard(
+                      context,
                       icon: Icons.currency_exchange,
                       title: 'Currency',
                       subtitle: provider.settings.currency,
                       onTap: () => _showCurrencyDialog(context, provider),
+                    ),
+
+                    const SizedBox(height: 16),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).cardColor,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
+                        ],
+                      ),
+                      child: SwitchListTile(
+                        value: provider.settings.isDailyReminderEnabled,
+                        onChanged: (val) => provider.toggleDailyReminder(val),
+                        title: Text("Daily Reminder (8 PM)", style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                        subtitle: Text("Get notified to record expenses", style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
+                        secondary: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE3F2FD).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.notifications_active, color: Color(0xFF2196F3)),
+                        ),
+                      ),
                     ),
 
                     const SizedBox(height: 30),
@@ -286,6 +324,7 @@ class SettingsScreen extends StatelessWidget {
                   isDarkMode: provider.settings.isDarkMode,
                   isBiometricEnabled: provider.settings.isBiometricEnabled,
                   calendarSystem: provider.settings.calendarSystem,
+                  isDailyReminderEnabled: provider.settings.isDailyReminderEnabled,
                   id: provider.settings.id
                 ));
                 Navigator.pop(context);
@@ -343,7 +382,7 @@ class SettingsScreen extends StatelessWidget {
   }
 
   void _showCurrencyDialog(BuildContext context, AppProvider provider) {
-    final currencies = ['NPR', 'USD', 'EUR', 'GBP', 'JPY', 'AUD', 'CAD', 'INR', 'CNY'];
+    final currencies = ['NPR.', 'USD', 'EUR', 'GBP', 'JPY', 'AUD', 'CAD', 'INR', 'CNY'];
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -359,6 +398,7 @@ class SettingsScreen extends StatelessWidget {
                 isDarkMode: provider.settings.isDarkMode,
                 isBiometricEnabled: provider.settings.isBiometricEnabled,
                 calendarSystem: provider.settings.calendarSystem,
+                isDailyReminderEnabled: provider.settings.isDailyReminderEnabled,
                 id: provider.settings.id
               ));
               Navigator.pop(context);

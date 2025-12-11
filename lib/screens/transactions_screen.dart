@@ -231,13 +231,16 @@ class TransactionsScreen extends StatelessWidget {
     );
   }
 
-  void _showAddTransactionDialog(BuildContext context) {
+  void _showAddTransactionDialog(BuildContext context, {Transaction? transaction}) {
     final provider = Provider.of<AppProvider>(context, listen: false);
-    String category = '';
-    String subCategory = '';
-    String amountText = '';
-    String type = 'expense';
-    DateTime selectedDate = DateTime.now();
+    final isEditing = transaction != null;
+    
+    final amountController = TextEditingController(text: isEditing ? transaction!.amount.toStringAsFixed(2) : '');
+    final subCategoryController = TextEditingController(text: transaction?.subCategory ?? '');
+    
+    DateTime selectedDate = isEditing ? transaction!.timestamp : DateTime.now();
+    String type = isEditing ? transaction!.type : 'expense';
+    String category = isEditing ? transaction!.category : '';
     
     // Get categories from budgets for expenses
     final budgetCategories = provider.budgets.map((b) => b.category).toList();
@@ -263,7 +266,7 @@ class TransactionsScreen extends StatelessWidget {
           }
 
           return AlertDialog(
-            title: const Text('Add Transaction'),
+            title: Text(isEditing ? 'Edit Transaction' : 'Add Transaction'),
             content: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -283,13 +286,14 @@ class TransactionsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   
-                  // Import SMS Button
+                  // Import SMS Button (Only for new transactions for simplicity)
+                  if (!isEditing)
                   OutlinedButton.icon(
                     onPressed: () async {
                       final ParsedTransaction? result = await _showSmsImportDialog(context);
                       if (result != null) {
                         setState(() {
-                          amountText = result.amount.toString();
+                          amountController.text = result.amount.toString();
                           selectedDate = result.date;
                         });
                         
@@ -305,13 +309,12 @@ class TransactionsScreen extends StatelessWidget {
                     icon: const Icon(Icons.sms),
                     label: const Text("Import from SMS"),
                   ),
-                  const SizedBox(height: 16),
+                  if (!isEditing) const SizedBox(height: 16),
 
                   TextField(
                     decoration: const InputDecoration(labelText: 'Amount'),
                     keyboardType: TextInputType.numberWithOptions(decimal: true),
-                    controller: TextEditingController(text: amountText), // Use controller to update text
-                    onChanged: (value) => amountText = value,
+                    controller: amountController,
                   ),
                   const SizedBox(height: 16),
                   
@@ -324,14 +327,6 @@ class TransactionsScreen extends StatelessWidget {
                           initialDate: NepaliDateTime.fromDateTime(selectedDate),
                           firstDate: NepaliDateTime(2070),
                           lastDate: NepaliDateTime.now(),
-                          builder: (context, child) {
-                            return Theme(
-                              data: Theme.of(context).copyWith(
-                                colorScheme: const ColorScheme.light(primary: Color(0xFF00C4B4)),
-                              ),
-                              child: child!,
-                            );
-                          },
                         );
                         if (picked != null) {
                           setState(() {
@@ -344,14 +339,6 @@ class TransactionsScreen extends StatelessWidget {
                           initialDate: selectedDate,
                           firstDate: DateTime(2020),
                           lastDate: DateTime.now(),
-                          builder: (context, child) {
-                            return Theme(
-                              data: Theme.of(context).copyWith(
-                                colorScheme: const ColorScheme.light(primary: Color(0xFF00C4B4)),
-                              ),
-                              child: child!,
-                            );
-                          },
                         );
                         if (picked != null && picked != selectedDate) {
                           setState(() {
@@ -398,7 +385,7 @@ class TransactionsScreen extends StatelessWidget {
                     const SizedBox(height: 16),
                     TextField(
                       decoration: const InputDecoration(labelText: 'Sub-category (Optional)'),
-                      onChanged: (value) => subCategory = value,
+                      controller: subCategoryController,
                     ),
                     
                     if (category.isNotEmpty && budgetAmount != null) ...[
@@ -416,7 +403,9 @@ class TransactionsScreen extends StatelessWidget {
                         style: const TextStyle(fontSize: 12, color: Colors.grey)),
                     ],
                   ] else
-                    TextField(
+                    // For Income, just a text field for source/category
+                   TextFormField(
+                      initialValue: category,
                       decoration: const InputDecoration(labelText: 'Source'),
                       onChanged: (value) => category = value,
                     ),
@@ -430,15 +419,25 @@ class TransactionsScreen extends StatelessWidget {
               ),
               TextButton(
                 onPressed: () {
-                  final amount = double.tryParse(amountText);
+                  final amount = double.tryParse(amountController.text);
                   if (amount != null && amount > 0 && category.isNotEmpty) {
-                    provider.addTransaction(Transaction(
-                      timestamp: selectedDate,
-                      amount: amount,
-                      category: category,
-                      subCategory: subCategory,
-                      type: type,
-                    ));
+                    if (isEditing) {
+                      provider.updateTransaction(transaction!.copyWith(
+                        timestamp: selectedDate,
+                        amount: amount,
+                        category: category,
+                        subCategory: subCategoryController.text,
+                        type: type,
+                      ));
+                    } else {
+                      provider.addTransaction(Transaction(
+                        timestamp: selectedDate,
+                        amount: amount,
+                        category: category,
+                        subCategory: subCategoryController.text,
+                        type: type,
+                      ));
+                    }
                     Navigator.pop(context);
                   }
                 },
@@ -450,6 +449,7 @@ class TransactionsScreen extends StatelessWidget {
       ),
     );
   }
+
 
   Future<ParsedTransaction?> _showSmsImportDialog(BuildContext context) {
     String text = '';

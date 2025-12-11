@@ -5,6 +5,7 @@ class UserSettings {
   final bool isDarkMode;
   final bool isBiometricEnabled;
   final String calendarSystem; // 'AD' or 'BS'
+  final bool isDailyReminderEnabled;
 
   UserSettings({
     this.id,
@@ -13,6 +14,7 @@ class UserSettings {
     this.isDarkMode = false,
     this.isBiometricEnabled = false,
     this.calendarSystem = 'AD',
+    this.isDailyReminderEnabled = false, // Default off
   });
 
   Map<String, dynamic> toMap() {
@@ -23,6 +25,7 @@ class UserSettings {
       'isDarkMode': isDarkMode ? 1 : 0,
       'isBiometricEnabled': isBiometricEnabled ? 1 : 0,
       'calendarSystem': calendarSystem,
+      'isDailyReminderEnabled': isDailyReminderEnabled ? 1 : 0,
     };
   }
 
@@ -34,6 +37,7 @@ class UserSettings {
       isDarkMode: (map['isDarkMode'] == 1 || map['isDarkMode'] == true),
       isBiometricEnabled: (map['isBiometricEnabled'] == 1 || map['isBiometricEnabled'] == true),
       calendarSystem: map['calendarSystem'] ?? 'AD',
+      isDailyReminderEnabled: (map['isDailyReminderEnabled'] == 1 || map['isDailyReminderEnabled'] == true),
     );
   }
 }

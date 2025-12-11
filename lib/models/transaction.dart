@@ -40,4 +40,23 @@ class Transaction {
       note: map['note'] ?? '',
     );
   }
+  Transaction copyWith({
+    String? id,
+    DateTime? timestamp,
+    double? amount,
+    String? category,
+    String? subCategory,
+    String? type,
+    String? note,
+  }) {
+    return Transaction(
+      id: id ?? this.id,
+      timestamp: timestamp ?? this.timestamp,
+      amount: amount ?? this.amount,
+      category: category ?? this.category,
+      subCategory: subCategory ?? this.subCategory,
+      type: type ?? this.type,
+      note: note ?? this.note,
+    );
+  }
 }

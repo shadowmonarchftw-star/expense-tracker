@@ -20,12 +20,18 @@ class BudgetScreen extends StatelessWidget {
           final currentYear = now.year;
           
           final currentBudgets = provider.budgets.where((b) => b.month == currentMonth && b.year == currentYear).toList();
+          
+          final monthTransactions = provider.transactions.where((t) {
+            return t.timestamp.month == currentMonth && t.timestamp.year == currentYear;
+          }).toList();
+          
           final currencyFormat = NumberFormat.currency(symbol: provider.settings.currency);
           
           final totalIncome = provider.settings.salary;
           final fixedExpenses = provider.fixedExpenses.fold(0.0, (sum, e) => sum + e.amount);
           final allocated = currentBudgets.fold(0.0, (sum, b) => sum + b.amount);
-          final remaining = totalIncome - fixedExpenses - allocated;
+          final goalSavings = monthTransactions.where((t) => t.subCategory == 'Savings').fold(0.0, (sum, t) => sum + t.amount);
+          final remaining = totalIncome - fixedExpenses - allocated - goalSavings;
           return Column(
             children: [
               // Gradient Header
@@ -95,6 +101,7 @@ class BudgetScreen extends StatelessWidget {
                           const Divider(height: 24),
                           _buildRow(context, 'Fixed Expenses', currencyFormat.format(fixedExpenses), color: const Color(0xFFFF6B6B)),
                           _buildRow(context, 'Allocated', currencyFormat.format(allocated), color: Colors.orange),
+                          _buildRow(context, 'Goal Savings', currencyFormat.format(goalSavings), color: const Color(0xFF00C4B4)),
                           const Divider(height: 24),
                           _buildRow(context, 'Remaining to Budget', currencyFormat.format(remaining), color: remaining >= 0 ? const Color(0xFF00C4B4) : const Color(0xFFFF6B6B), bold: true),
                         ],
@@ -175,6 +182,9 @@ class BudgetScreen extends StatelessWidget {
                   ],
                 ),
               ),
+
+              
+              const SizedBox(height: 80), // Bottom padding for FAB
             ],
           );
         },
@@ -189,16 +199,17 @@ class BudgetScreen extends StatelessWidget {
 
   Widget _buildRow(BuildContext context, String label, String value, {Color? color, bool bold = false}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 6), // Increased padding
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+          Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16)), // Increased font
           Text(
             value,
             style: TextStyle(
               color: color ?? Theme.of(context).colorScheme.onSurface,
-              fontWeight: bold ? FontWeight.bold : null,
+              fontWeight: bold ? FontWeight.bold : FontWeight.w500, // Make standard values a bit heavier too
+              fontSize: 16, // Increased font
             ),
           ),
         ],
@@ -240,6 +251,27 @@ class BudgetScreen extends StatelessWidget {
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancel'),
           ),
+          if (isEditing)
+            TextButton(
+              onPressed: () {
+                 showDialog(
+                   context: context,
+                   builder: (ctx) => AlertDialog(
+                     title: const Text("Delete Budget?"),
+                     content: Text("Delete budget for $category?"),
+                     actions: [
+                       TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancel")),
+                       TextButton(onPressed: () {
+                          provider.deleteBudget(budget!.id!);
+                          Navigator.pop(ctx); // Close verify
+                          Navigator.pop(context); // Close edit
+                       }, child: const Text("Delete", style: TextStyle(color: Colors.red))),
+                     ],
+                   )
+                 );
+              },
+              child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            ),
           TextButton(
             onPressed: () {
               final amount = int.tryParse(amountText);

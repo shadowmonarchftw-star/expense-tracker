@@ -51,14 +51,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
-                  Icons.account_balance_wallet,
+                  Icons.savings,
                   size: 64,
                   color: Colors.white,
                 ),
               ),
               const SizedBox(height: 24),
               const Text(
-                'Expense Tracker',
+                'Save Up',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 32,
