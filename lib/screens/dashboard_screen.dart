@@ -152,7 +152,7 @@ class DashboardScreen extends StatelessWidget {
                     // Chart Section
                     TransactionChart(transactions: provider.transactions),
 
-                    // Income/Expense Cards
+                      // Income/Expense Cards
                     Row(
                       children: [
                         Expanded(
@@ -168,7 +168,9 @@ class DashboardScreen extends StatelessWidget {
                         Expanded(
                           child: _SummaryCard(
                             title: 'Expenses',
-                            amount: currencyFormat.format(variableExpenses),
+                            amount: currencyFormat.format(variableExpenses - 
+                              monthTransactions.where((t) => t.subCategory == 'Savings').fold(0.0, (sum, t) => sum + t.amount)
+                            ),
                             color: const Color(0xFFFF6B6B),
                             icon: Icons.arrow_upward,
                             bgColor: const Color(0xFFFF6B6B), // Pass base color for opacity handling inside widget
